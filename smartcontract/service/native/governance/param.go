@@ -1020,3 +1020,23 @@ func (this *GasAddress) Deserialization(source *common.ZeroCopySource) error {
 	this.Address = address
 	return nil
 }
+
+type DestroyContractParam struct {
+	ContractAddress string
+}
+
+func (this *DestroyContractParam) Serialize(w io.Writer) error {
+	if err := serialization.WriteString(w, this.ContractAddress); err != nil {
+		return fmt.Errorf("serialization.WriteString, serialize contractAddress error: %v", err)
+	}
+	return nil
+}
+
+func (this *DestroyContractParam) Deserialize(r io.Reader) error {
+	contractAddress, err := serialization.ReadString(r)
+	if err != nil {
+		return fmt.Errorf("serialization.ReadString, deserialize contractAddress error: %v", err)
+	}
+	this.ContractAddress = contractAddress
+	return nil
+}
