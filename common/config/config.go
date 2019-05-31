@@ -193,11 +193,11 @@ var PolarisConfig = &GenesisConfig{
 
 var MainNetConfig = &GenesisConfig{
 	SeedList: []string{
-		"seed1.ont.io:20338",
-		"seed2.ont.io:20338",
-		"seed3.ont.io:20338",
-		"seed4.ont.io:20338",
-		"seed5.ont.io:20338"},
+		//"seed1.ont.io:20338",
+		//"seed2.ont.io:20338",
+		//"seed3.ont.io:20338",
+		//"seed4.ont.io:20338",
+		"127.0.0.1:20338"},
 	ConsensusType: CONSENSUS_TYPE_VBFT,
 	VBFT: &VBFTConfig{
 		N:                    7,
@@ -215,8 +215,8 @@ var MainNetConfig = &GenesisConfig{
 		Peers: []*VBFTPeerStakeInfo{
 			{
 				Index:      1,
-				PeerPubkey: "03348c8fe64e1defb408676b6e320038bd2e592c802e27c3d7e88e68270076c2f7",
-				Address:    "AZavFr7sQ4em2NmqWDjLMY34tHMQzATWgx",
+				PeerPubkey: "02bd9570d923a22c637d0e7c742824db39cfa4fa87bf5e594ffba1cd3653eed08e",
+				Address:    "AZMwFs9ey3sdUsMFJ65W5TUbKUc87Ng4HF",
 			},
 			{
 				Index:      2,
@@ -572,9 +572,9 @@ func NewOntologyConfig() *OntologyConfig {
 			NetworkMagic:              GetNetworkMagic(NETWORK_ID_MAIN_NET),
 			NodePort:                  DEFAULT_NODE_PORT,
 			IsTLS:                     false,
-			CertPath:                  "",
+			CertPath:                  "msp/signcerts/cert.pem",
 			KeyPath:                   "",
-			CAPath:                    "",
+			CAPath:                    "msp/cacerts/",
 			HttpInfoPort:              DEFAULT_HTTP_INFO_PORT,
 			MaxHdrSyncReqs:            DEFAULT_MAX_SYNC_HEADER,
 			MaxConnInBound:            DEFAULT_MAX_CONN_IN_BOUND,

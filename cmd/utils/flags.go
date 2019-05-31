@@ -251,6 +251,10 @@ var (
 		Name:  "wif",
 		Usage: "Import WIF keys from the source file specified by --source option",
 	}
+	AccountPEMFlag = cli.BoolFlag{
+		Name:  "pem",
+		Usage: "Import private key from a PEM file specified by --source option",
+	}
 	AccountMultiMFlag = cli.UintFlag{
 		Name:  "m",
 		Usage: "Min signature `<number>` of multi signature address",

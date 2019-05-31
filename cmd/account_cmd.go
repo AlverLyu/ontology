@@ -20,8 +20,16 @@ package cmd
 
 import (
 	"bufio"
+	"crypto/ecdsa"
+	"crypto/x509"
 	"encoding/hex"
+	"encoding/pem"
+	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+
+	"github.com/ontio/ontology-crypto/ec"
 	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology-crypto/signature"
 	"github.com/ontio/ontology/account"
@@ -30,7 +38,6 @@ import (
 	"github.com/ontio/ontology/common/password"
 	"github.com/ontio/ontology/core/types"
 	"github.com/urfave/cli"
-	"os"
 )
 
 var (
@@ -132,6 +139,7 @@ You can use ./Ontology account --help command to view help information of wallet
 					utils.WalletFileFlag,
 					utils.AccountSourceFileFlag,
 					utils.AccountWIFFlag,
+					utils.AccountPEMFlag,
 				},
 				Description: "Import accounts of wallet to another. If not specific accounts in args, all account in source will be import",
 			},
@@ -410,6 +418,43 @@ func accountImport(ctx *cli.Context) error {
 	skip := 0
 	total := 0
 
+	importPri := func(pri keypair.PrivateKey, pwd []byte) {
+		pub := pri.Public()
+		addr := types.AddressFromPubKey(pub)
+		b58addr := addr.ToBase58()
+		old := wallet.GetAccountMetadataByAddress(b58addr)
+		if old != nil {
+			PrintWarnMsg("Account %s already exists.", b58addr)
+			skip += 1
+			return
+		}
+		PrintInfoMsg("Import account %s", b58addr)
+		k, err := keypair.EncryptPrivateKey(pri, b58addr, pwd)
+		if err != nil {
+			PrintWarnMsg("Import account:%s error %s", b58addr, err)
+			fail += 1
+			return
+		}
+		var accMeta account.AccountMetadata
+		accMeta.Address = k.Address
+		accMeta.KeyType = k.Alg
+		accMeta.EncAlg = k.EncAlg
+		accMeta.Hash = k.Hash
+		accMeta.Key = k.Key
+		accMeta.Curve = k.Param["curve"]
+		accMeta.Salt = k.Salt
+		accMeta.Label = ""
+		accMeta.PubKey = hex.EncodeToString(keypair.SerializePublicKey(pub))
+		accMeta.SigSch = signature.SHA256withECDSA.Name()
+		err = wallet.ImportAccount(&accMeta)
+		if err != nil {
+			PrintWarnMsg("Import account:%s error:%s", accMeta.Address, err)
+			fail += 1
+			return
+		}
+		succ += 1
+	}
+
 	if ctx.Bool(utils.GetFlagName(utils.AccountWIFFlag)) {
 		// import WIF keys
 		file, err := os.Open(source)
@@ -434,42 +479,40 @@ func accountImport(ctx *cli.Context) error {
 			return err
 		}
 		for _, v := range keys {
-			pub := v.Public()
-			addr := types.AddressFromPubKey(pub)
-			b58addr := addr.ToBase58()
-			old := wallet.GetAccountMetadataByAddress(b58addr)
-			if old != nil {
-				PrintWarnMsg("Account %s already exists.", b58addr)
-				skip += 1
-				continue
-			}
-			PrintInfoMsg("Import account %s", b58addr)
-			k, err := keypair.EncryptPrivateKey(v, b58addr, pwd)
-			if err != nil {
-				PrintWarnMsg("Import account:%s error %s", b58addr, err)
-				fail += 1
-				continue
-			}
-			var accMeta account.AccountMetadata
-			accMeta.Address = k.Address
-			accMeta.KeyType = k.Alg
-			accMeta.EncAlg = k.EncAlg
-			accMeta.Hash = k.Hash
-			accMeta.Key = k.Key
-			accMeta.Curve = k.Param["curve"]
-			accMeta.Salt = k.Salt
-			accMeta.Label = ""
-			accMeta.PubKey = hex.EncodeToString(keypair.SerializePublicKey(v.Public()))
-			accMeta.SigSch = signature.SHA256withECDSA.Name()
-			err = wallet.ImportAccount(&accMeta)
-			if err != nil {
-				PrintWarnMsg("Import account:%s error:%s", accMeta.Address, err)
-				fail += 1
-				continue
-			}
-			succ += 1
+			importPri(v, pwd)
 		}
 		common.ClearPasswd(pwd)
+	} else if ctx.Bool(utils.GetFlagName(utils.AccountPEMFlag)) {
+		data, err := ioutil.ReadFile(source)
+		if err != nil {
+			return err
+		}
+		block, _ := pem.Decode(data)
+		if block == nil {
+			return errors.New("failed to decode PEM")
+		}
+		key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+		if err != nil {
+			return err
+		}
+		t, ok := key.(*ecdsa.PrivateKey)
+		if !ok {
+			return errors.New("invalid private key type")
+		}
+		_, err = keypair.GetCurveLabel(t.Curve)
+		if err != nil {
+			return err
+		}
+		pri := &ec.PrivateKey{
+			Algorithm:  ec.ECDSA,
+			PrivateKey: t,
+		}
+		pwd, err := password.GetConfirmedPassword()
+		defer common.ClearPasswd(pwd)
+		if err != nil {
+			return err
+		}
+		importPri(pri, pwd)
 	} else {
 		ctx.Set(utils.GetFlagName(utils.WalletFileFlag), source)
 		sourceWallet, err := common.OpenWallet(ctx)
