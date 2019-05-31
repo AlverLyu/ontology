@@ -164,8 +164,6 @@ func NewVersion(n p2pnet.P2P, height uint32) mt.Message {
 		Cert:         n.GetCert(),
 	}
 
-	log.Warnf("NewVersion: certificate: %s", version.P.Cert)
-
 	if n.GetRelay() {
 		version.P.Relay = 1
 	} else {

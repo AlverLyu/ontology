@@ -114,8 +114,6 @@ func (this *NetServer) init() error {
 	if err != nil {
 		log.Errorf("[p2p]set certificate error, %s", err)
 		return errors.New("[p2p]set certificate error")
-	} else {
-		log.Warnf("certificate: %s", this.base.GetCert())
 	}
 
 	log.Infof("[p2p]init peer ID to %d", this.base.GetID())
