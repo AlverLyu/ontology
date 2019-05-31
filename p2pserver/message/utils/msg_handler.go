@@ -19,6 +19,7 @@
 package utils
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"net"
@@ -26,12 +27,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ontio/ontology/core/states"
+
+	"github.com/ontio/ontology/smartcontract/service/native/governance"
+	"github.com/ontio/ontology/smartcontract/service/native/utils"
+
 	lru "github.com/hashicorp/golang-lru"
 	evtActor "github.com/ontio/ontology-eventbus/actor"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/config"
 	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/ledger"
+	scom "github.com/ontio/ontology/core/store/common"
 	"github.com/ontio/ontology/core/types"
 	actor "github.com/ontio/ontology/p2pserver/actor/req"
 	msgCommon "github.com/ontio/ontology/p2pserver/common"
@@ -310,6 +317,16 @@ func VersionHandle(data *msgTypes.MsgPayload, p2p p2p.P2P, pid *evtActor.PID, ar
 		return
 	}
 
+	// Check white list
+	err = checkWhiteList(version.P.Addr)
+	if err != nil {
+		log.Warnf("[p2p]checking whitelist failed, %s", err)
+		remotePeer.Close()
+		return
+	}
+
+	log.Debug("checking whitelist passed")
+
 	if version.P.Cap[msgCommon.HTTP_INFO_FLAG] == 0x01 {
 		remotePeer.SetHttpInfoState(true)
 	} else {
@@ -343,6 +360,75 @@ func VersionHandle(data *msgTypes.MsgPayload, p2p p2p.P2P, pid *evtActor.PID, ar
 		log.Warn(err)
 		return
 	}
+}
+
+func checkWhiteList(addr string) error {
+	log.Debug("checking address", addr)
+	// check in the initial peer list
+	for _, p := range config.DefConfig.Genesis.VBFT.Peers {
+		if addr == p.Address {
+			return nil
+		}
+	}
+
+	// check governance storage
+	contract := utils.GovernanceContractAddress
+	key := utils.ConcatKey(contract, []byte(governance.GOVERNANCE_VIEW))
+	key = append([]byte{byte(scom.ST_STORAGE)}, key...)
+	item, err := ledger.DefLedger.GetStorageItem(contract, key)
+	if err != nil {
+		return fmt.Errorf("get governance view error, %s", err)
+	} else if item == nil {
+		return fmt.Errorf("governance view storage item is nil")
+	}
+
+	val, err := states.GetValueFromRawStorageItem(item)
+	if err != nil {
+		return fmt.Errorf("get item value error, %s", err)
+	}
+
+	view := governance.GovernanceView{}
+	err = view.Deserialize(bytes.NewBuffer(val))
+	if err != nil {
+		return fmt.Errorf("failed to deserialize governance view, %s", err)
+	}
+
+	viewBytes, err := governance.GetUint32Bytes(view.View)
+	if err != nil {
+		return err
+	}
+	key = utils.ConcatKey(contract, []byte(governance.PEER_POOL), viewBytes)
+	key = append([]byte{byte(scom.ST_STORAGE)}, key...)
+	item, err = ledger.DefLedger.GetStorageItem(contract, key)
+	if err != nil {
+		return fmt.Errorf("get peer pool error, %s", err)
+	} else if item == nil {
+		return fmt.Errorf("peer pool storage item is nil")
+	}
+
+	val, err = states.GetValueFromRawStorageItem(item)
+	if err != nil {
+		return fmt.Errorf("peer pool item value error, %s", err)
+	}
+
+	peerPoolMap := &governance.PeerPoolMap{
+		make(map[string]*governance.PeerPoolItem),
+	}
+	if err := peerPoolMap.Deserialize(bytes.NewBuffer(val)); err != nil {
+		return fmt.Errorf("failed to deserialize peer pool: %s", err)
+	}
+
+	for _, v := range peerPoolMap.PeerPoolMap {
+		log.Warn("peer pool:", v.Address.ToBase58())
+		if v.Status != 1 || v.Status != 2 {
+			continue
+		}
+		if v.Address.ToBase58() == addr {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("not in the whitelist")
 }
 
 // VerAckHandle handles the version ack from peer

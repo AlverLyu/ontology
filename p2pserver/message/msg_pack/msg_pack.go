@@ -162,6 +162,7 @@ func NewVersion(n p2pnet.P2P, height uint32) mt.Message {
 		TimeStamp:    time.Now().UnixNano(),
 		SoftVersion:  config.Version,
 		Cert:         n.GetCert(),
+		Addr:         n.GetAddr(),
 	}
 
 	if n.GetRelay() {

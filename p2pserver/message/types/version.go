@@ -40,6 +40,7 @@ type VersionPayload struct {
 	IsConsensus bool
 	SoftVersion string
 	Cert        string
+	Addr        string
 }
 
 type Version struct {
@@ -61,6 +62,7 @@ func (this *Version) Serialization(sink *comm.ZeroCopySink) {
 	sink.WriteBool(this.P.IsConsensus)
 	sink.WriteString(this.P.SoftVersion)
 	sink.WriteString(this.P.Cert)
+	sink.WriteString(this.P.Addr)
 }
 
 func (this *Version) CmdType() string {
@@ -99,6 +101,11 @@ func (this *Version) Deserialization(source *comm.ZeroCopySource) error {
 	this.P.Cert, _, irregular, eof = source.NextString()
 	if eof || irregular {
 		this.P.Cert = ""
+	}
+
+	this.P.Addr, _, irregular, eof = source.NextString()
+	if eof || irregular {
+		this.P.Addr = ""
 	}
 
 	return nil

@@ -20,7 +20,6 @@ package peer
 
 import (
 	"errors"
-	"io/ioutil"
 	"net"
 	"runtime"
 	"sync"
@@ -44,7 +43,6 @@ type PeerCom struct {
 	port         uint16
 	height       uint64
 	softVersion  string
-	cert         string
 }
 
 // SetID sets a peer's id
@@ -125,21 +123,6 @@ func (this *PeerCom) SetSoftVersion(softVer string) {
 //GetSoftVersion return a peer's software version
 func (this *PeerCom) GetSoftVersion() string {
 	return this.softVersion
-}
-
-// SetCert set the PEM encoded certificate read from the file
-func (this *PeerCom) SetCert(file string) error {
-	data, err := ioutil.ReadFile(file)
-	if err != nil {
-		return err
-	}
-	this.cert = string(data)
-	return nil
-}
-
-// GetCert return a PEM encoded certificate string
-func (this *PeerCom) GetCert() string {
-	return this.cert
 }
 
 //Peer represent the node in p2p
@@ -337,9 +320,4 @@ func (this *Peer) UpdateInfo(t time.Time, version uint32, services uint64,
 		this.base.SetRelay(true)
 	}
 	this.SetHeight(uint64(height))
-}
-
-//GetCert return peer's certificate
-func (this *Peer) GetCert() string {
-	return this.base.GetCert()
 }

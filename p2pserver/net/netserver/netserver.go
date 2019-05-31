@@ -20,6 +20,7 @@ package netserver
 
 import (
 	"errors"
+	"io/ioutil"
 	"math/rand"
 	"net"
 	"strings"
@@ -60,6 +61,8 @@ type NetServer struct {
 	inConnRecord  InConnectionRecord
 	outConnRecord OutConnectionRecord
 	OwnAddress    string //network`s own address(ip : sync port),which get from version check
+	Cert          string //network's own certificate
+	Addr          string //network's own account address in base58 format
 }
 
 //InConnectionRecord include all addr connected
@@ -110,7 +113,7 @@ func (this *NetServer) init() error {
 
 	this.base.SetID(id)
 
-	err := this.base.SetCert(config.DefConfig.P2PNode.CertPath)
+	err := this.SetCert(config.DefConfig.P2PNode.CertPath)
 	if err != nil {
 		log.Errorf("[p2p]set certificate error, %s", err)
 		return errors.New("[p2p]set certificate error")
@@ -136,6 +139,15 @@ func (this *NetServer) GetVersion() uint32 {
 //GetId return peer`s id
 func (this *NetServer) GetID() uint64 {
 	return this.base.GetID()
+}
+
+func (this *NetServer) SetAddr(addr string) {
+	this.Addr = addr
+}
+
+//GetAddr returns self peer's account address
+func (this *NetServer) GetAddr() string {
+	return this.Addr
 }
 
 // SetHeight sets the local's height
@@ -164,9 +176,19 @@ func (this *NetServer) GetPort() uint16 {
 	return this.base.GetPort()
 }
 
+// SetCert set the PEM encoded certificate read from the file
+func (this *NetServer) SetCert(file string) error {
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		return err
+	}
+	this.Cert = string(data)
+	return nil
+}
+
 //GetCert return self peer's certificate
 func (this *NetServer) GetCert() string {
-	return this.base.GetCert()
+	return this.Cert
 }
 
 //GetHttpInfoPort return the port support info via http

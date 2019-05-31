@@ -220,8 +220,8 @@ var MainNetConfig = &GenesisConfig{
 			},
 			{
 				Index:      2,
-				PeerPubkey: "03afd920a3b4ce2e7175a32c0d092153d1a11ef5e0dcc14e71c85101b95518d5d7",
-				Address:    "AM9jHMV7xY4HWH2dWmzyxrtnbi6ErNt7oL",
+				PeerPubkey: "02a2a00e560bf2be370f9f014058241747a1504077005613a4be3231c3541b7746",
+				Address:    "AFtt1nqsbbfS6DYzUs5SYqfJHxXk9yVZ2F",
 			},
 			{
 				Index:      3,
