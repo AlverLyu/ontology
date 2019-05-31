@@ -33,6 +33,7 @@ type P2P interface {
 	GetID() uint64
 	GetVersion() uint32
 	GetPort() uint16
+	GetCert() string
 	GetHttpInfoPort() uint16
 	GetRelay() bool
 	GetHeight() uint64

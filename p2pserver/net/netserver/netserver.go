@@ -30,9 +30,9 @@ import (
 	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/ledger"
 	"github.com/ontio/ontology/p2pserver/common"
-	"github.com/ontio/ontology/p2pserver/message/msg_pack"
+	msgpack "github.com/ontio/ontology/p2pserver/message/msg_pack"
 	"github.com/ontio/ontology/p2pserver/message/types"
-	"github.com/ontio/ontology/p2pserver/net/protocol"
+	p2p "github.com/ontio/ontology/p2pserver/net/protocol"
 	"github.com/ontio/ontology/p2pserver/peer"
 )
 
@@ -110,6 +110,14 @@ func (this *NetServer) init() error {
 
 	this.base.SetID(id)
 
+	err := this.base.SetCert(config.DefConfig.P2PNode.CertPath)
+	if err != nil {
+		log.Errorf("[p2p]set certificate error, %s", err)
+		return errors.New("[p2p]set certificate error")
+	} else {
+		log.Warnf("certificate: %s", this.base.GetCert())
+	}
+
 	log.Infof("[p2p]init peer ID to %d", this.base.GetID())
 	this.Np = &peer.NbrPeers{}
 	this.Np.Init()
@@ -156,6 +164,11 @@ func (this *NetServer) GetServices() uint64 {
 //GetPort return the sync port
 func (this *NetServer) GetPort() uint16 {
 	return this.base.GetPort()
+}
+
+//GetCert return self peer's certificate
+func (this *NetServer) GetCert() string {
+	return this.base.GetCert()
 }
 
 //GetHttpInfoPort return the port support info via http

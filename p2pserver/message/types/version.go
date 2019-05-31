@@ -39,6 +39,7 @@ type VersionPayload struct {
 	Relay       uint8
 	IsConsensus bool
 	SoftVersion string
+	Cert        string
 }
 
 type Version struct {
@@ -59,6 +60,7 @@ func (this *Version) Serialization(sink *comm.ZeroCopySink) {
 	sink.WriteUint8(this.P.Relay)
 	sink.WriteBool(this.P.IsConsensus)
 	sink.WriteString(this.P.SoftVersion)
+	sink.WriteString(this.P.Cert)
 }
 
 func (this *Version) CmdType() string {
@@ -92,6 +94,11 @@ func (this *Version) Deserialization(source *comm.ZeroCopySource) error {
 	this.P.SoftVersion, _, irregular, eof = source.NextString()
 	if eof || irregular {
 		this.P.SoftVersion = ""
+	}
+
+	this.P.Cert, _, irregular, eof = source.NextString()
+	if eof || irregular {
+		this.P.Cert = ""
 	}
 
 	return nil

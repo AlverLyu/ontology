@@ -161,7 +161,10 @@ func NewVersion(n p2pnet.P2P, height uint32) mt.Message {
 		StartHeight:  uint64(height),
 		TimeStamp:    time.Now().UnixNano(),
 		SoftVersion:  config.Version,
+		Cert:         n.GetCert(),
 	}
+
+	log.Warnf("NewVersion: certificate: %s", version.P.Cert)
 
 	if n.GetRelay() {
 		version.P.Relay = 1
