@@ -76,6 +76,7 @@ const (
 	REDUCE_INIT_POS                  = "reduceInitPos"
 	SET_PROMISE_POS                  = "setPromisePos"
 	SET_GAS_ADDRESS                  = "setGasAddress"
+	DESTROY_CONTRACT                 = "destroyContract"
 
 	//key prefix
 	GLOBAL_PARAM      = "globalParam"
@@ -152,6 +153,8 @@ func RegisterGovernanceContract(native *native.NativeService) {
 	native.Register(TRANSFER_PENALTY, TransferPenalty)
 	native.Register(SET_PROMISE_POS, SetPromisePos)
 	native.Register(SET_GAS_ADDRESS, SetGasAddress)
+
+	native.Register(DESTROY_CONTRACT, DestroyContract)
 }
 
 //Init governance contract, include vbft config, global param and ontid admin.
@@ -1676,6 +1679,41 @@ func SetGasAddress(native *native.NativeService) ([]byte, error) {
 	err = putGasAddress(native, contract, param)
 	if err != nil {
 		return utils.BYTE_FALSE, fmt.Errorf("put gasAddress error: %v", err)
+	}
+
+	return utils.BYTE_TRUE, nil
+}
+
+//destroy a contract, only can invoked by admin
+func DestroyContract(native *native.NativeService) ([]byte, error) {
+	// get operator from database
+	operatorAddress, err := global_params.GetStorageRole(native,
+		global_params.GenerateOperatorKey(utils.ParamContractAddress))
+	if err != nil {
+		return utils.BYTE_FALSE, fmt.Errorf("DestroyContract, get operator error: %v", err)
+	}
+
+	//check witness
+	err = utils.ValidateOwner(native, operatorAddress)
+	if err != nil {
+		return utils.BYTE_FALSE, fmt.Errorf("DestroyContract, checkWitness error: %v", err)
+	}
+
+	param := new(DestroyContractParam)
+	if err := param.Deserialize(bytes.NewBuffer(native.Input)); err != nil {
+		return utils.BYTE_FALSE, fmt.Errorf("DestroyContract, contract params deserialize error: %v", err)
+	}
+
+	contractAddress, err := common.AddressFromHexString(param.ContractAddress)
+	native.CacheDB.DeleteContract(contractAddress)
+	iter := native.CacheDB.NewIterator(contractAddress[:])
+	for has := iter.First(); has; has = iter.Next() {
+		key := iter.Key()
+		native.CacheDB.Delete(key)
+	}
+	iter.Release()
+	if err := iter.Error(); err != nil {
+		return utils.BYTE_FALSE, fmt.Errorf("DestroyContract, iter error: %v", err)
 	}
 
 	return utils.BYTE_TRUE, nil
