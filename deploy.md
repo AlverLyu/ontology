@@ -39,4 +39,10 @@ ontology account list -v
 
 ## 3. 启动节点
 
-在`msp`的同级目录启动ontology，程序会从`./msp/signcerts/`目录中读取证书。
+在`msp`的同级目录启动节点
+
+```
+ontology --enable-consensus
+```
+
+程序会从`./msp/signcerts/`目录中读取证书。
