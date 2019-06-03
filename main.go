@@ -142,7 +142,7 @@ func main() {
 func startOntology(ctx *cli.Context) {
 	initLog(ctx)
 
-	log.Infof("ontology version %s", config.Version)
+	//log.Infof("ontology version %s", config.Version)
 
 	setMaxOpenFiles()
 

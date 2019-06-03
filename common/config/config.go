@@ -572,7 +572,7 @@ func NewOntologyConfig() *OntologyConfig {
 			NetworkMagic:              GetNetworkMagic(NETWORK_ID_MAIN_NET),
 			NodePort:                  DEFAULT_NODE_PORT,
 			IsTLS:                     false,
-			CertPath:                  "msp/signcerts/cert.pem",
+			CertPath:                  "./cert.pem",
 			KeyPath:                   "",
 			CAPath:                    "msp/cacerts/",
 			HttpInfoPort:              DEFAULT_HTTP_INFO_PORT,
