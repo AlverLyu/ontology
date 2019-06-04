@@ -98,7 +98,7 @@ const TEMPLATE_PAGE = `
 
 <table class="font" border="0" width="80%">
 	<tr>
-	<td width="26%" align="center"><a href="https://ont.io" class="site">site : https://ont.io</a></td>
+	<td width="26%" align="center"><a href="https://onchain.com" class="site">site : https://onchain.com</a></td>
 	</tr>
 </table>
 <br><br><br><br>

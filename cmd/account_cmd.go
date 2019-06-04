@@ -187,18 +187,18 @@ func accountCreate(ctx *cli.Context) error {
 	}
 	defer common.ClearPasswd(pass)
 	if ctx.Bool(utils.IdentityFlag.Name) {
-		// create ONT ID
+		// create DNA ID
 		wd := wallet.GetWalletData()
 		id, err := account.NewIdentity(optionLabel, keyType, curve, pass)
 		if err != nil {
-			return fmt.Errorf("create ONT ID error: %s", err)
+			return fmt.Errorf("create DNA ID error: %s", err)
 		}
 		wd.AddIdentity(id)
 		err = wd.Save(optionFile)
 		if err != nil {
 			return fmt.Errorf("save to %s error: %s", optionFile, err)
 		}
-		PrintInfoMsg("ONT ID created:%s", id.ID)
+		PrintInfoMsg("DNA ID created:%s", id.ID)
 		PrintInfoMsg("Bind public key:%s", id.Control[0].Public)
 		return nil
 	}
